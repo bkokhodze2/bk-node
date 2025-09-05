@@ -7,15 +7,19 @@
     "build": "tsc",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "seed:users": "tsc && node dist/seedUsers.js",
-    "mongodb": "mongod --dbpath data/db"
+    "mongodb": "mongod --dbpath data/db",
+    "migrate:flats-address": "npm run build && node dist/scripts/migrateFlatsAddress.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/busboy": "^1.5.4",
     "@types/multer": "^2.0.0",
     "bcryptjs": "^3.0.2",
+    "busboy": "^1.6.0",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

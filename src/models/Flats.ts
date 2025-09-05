@@ -4,30 +4,47 @@ type Currency = "GEL" | "USD" | "EUR";
 
 export interface IFlatImage {
   _id?: mongoose.Types.ObjectId;
-  url: string; // primary URL to use in clients (remote if available, else local)
+  url: string;
   filename: string;
   size: number;
   contentType: string;
   createdAt?: Date;
-  // storage metadata
-  storage?: 'local' | 'firebase';
-  localUrl?: string; // /uploads/<file>
-  bucket?: string;   // firebase bucket
-  path?: string;     // object path in bucket
-  publicUrl?: string; // firebase public/signed URL
+  storage?: 'local' | 'firebase' | 'cloudinary';
+  localUrl?: string;
+  bucket?: string;
+  path?: string;
+  publicUrl?: string;
+  cloudinaryPublicId?: string;
+}
+
+export interface Address {
+  street: string;
+  city?: string;
+  state?: string;
+  zip?: string;
 }
 
 export interface IFlat extends Document {
   square: number;
-  location: string;
+  address: Address;
   price: number;
   currency: Currency;
   images?: IFlatImage[];
 }
 
+const AddressSchema = new Schema(
+  {
+    street: { type: String, required: true },
+    city: { type: String, required: false },
+    state: { type: String, required: false },
+    zip: { type: String, required: false },
+  },
+  { _id: false, id: false }
+);
+
 const FlatSchema: Schema = new Schema({
   square: {type: Number, required: true},
-  location: {type: String, required: true},
+  address: { type: AddressSchema, required: true },
   price: {type: Number, required: true},
   currency: {
     type: String,
@@ -43,11 +60,12 @@ const FlatSchema: Schema = new Schema({
         size: { type: Number, required: true },
         contentType: { type: String, required: true },
         createdAt: { type: Date, default: Date.now },
-        storage: { type: String, enum: ['local', 'firebase'], default: 'local' },
+        storage: { type: String, enum: ['local', 'firebase', 'cloudinary'], default: 'local' },
         localUrl: { type: String },
         bucket: { type: String },
         path: { type: String },
         publicUrl: { type: String },
+        cloudinaryPublicId: { type: String },
       },
       { _id: true, id: false }
     )
