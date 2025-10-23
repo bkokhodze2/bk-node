@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
   age: number;
+  _id: mongoose.Types.ObjectId;
   email: string;
   firstName: string;
   lastName: string;

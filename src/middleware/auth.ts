@@ -1,9 +1,10 @@
 import {Request, Response, NextFunction} from 'express';
 import {verifyAccessToken} from '../services/jwt';
-import { AuthPayload } from '../types/auth';
+import {IUser} from "../models/User";
+import {IUserForToken} from "../types/auth";
 
 export interface AuthRequest extends Request {
-  user?: AuthPayload;
+  user?: IUserForToken;
 }
 
 export default function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {

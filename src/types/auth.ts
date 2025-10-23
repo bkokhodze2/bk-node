@@ -1,8 +1,5 @@
-export interface AuthPayload {
-  userId: string;
-  email: string;
-  // optional JWT claims added by sign/verify
-  iat?: number;
-  exp?: number;
-}
+import {IUser} from "../models/User";
+
+export type IUserForToken = Pick<IUser, 'password' | 'email' | "age" | "address" | 'firstName' | "id" | 'lastName'>;
+
 

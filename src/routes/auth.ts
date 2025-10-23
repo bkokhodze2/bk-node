@@ -1,8 +1,8 @@
-import { Router, Request, Response } from 'express';
+import {Router, Request, Response} from 'express';
 import bcrypt from 'bcryptjs';
-import User from '../models/User';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../services/jwt';
-import { AuthPayload } from '../types/auth';
+import User, {IUser} from '../models/User';
+import {signAccessToken, signRefreshToken, verifyRefreshToken} from '../services/jwt';
+import {IUserForToken} from '../types/auth';
 
 const router = Router();
 
@@ -78,11 +78,11 @@ router.post('/auth/register', async (req: Request, res: Response) => {
     if (!email.match(/[^@\s]+@[^@\s]+\.[^@\s]+/)) errors.push('email is invalid');
     if (Number.isNaN(age) || !Number.isFinite(age) || age < 0 || age > 150) errors.push('age must be a number between 0 and 150');
 
-    if (errors.length) return res.status(400).json({ errors });
+    if (errors.length) return res.status(400).json({errors});
 
     // Check for existing user
-    const existing = await User.findOne({ email }).lean();
-    if (existing) return res.status(409).json({ error: 'Email already registered' });
+    const existing = await User.findOne({email}).lean();
+    if (existing) return res.status(409).json({error: 'Email already registered'});
 
     // If birthDate not provided, derive approximate birthDate as Jan 1 of (currentYear - age)
     const computedBirthDate = birthDate || new Date(new Date().getFullYear() - Math.floor(age), 0, 1);
@@ -103,8 +103,8 @@ router.post('/auth/register', async (req: Request, res: Response) => {
     const sanitized = user.toObject(); // transforms in schema remove password
     res.status(201).json(sanitized);
   } catch (err: any) {
-    if (err && err.code === 11000) return res.status(409).json({ error: 'Duplicate key error' });
-    res.status(500).json({ error: err?.message || 'Internal server error' });
+    if (err && err.code === 11000) return res.status(409).json({error: 'Duplicate key error'});
+    res.status(500).json({error: err?.message || 'Internal server error'});
   }
 });
 
@@ -139,30 +139,38 @@ router.post('/auth/register', async (req: Request, res: Response) => {
 // Login: POST /auth/login
 router.post('/auth/login', async (req: Request, res: Response) => {
   try {
-    const { email: rawEmail, password } = req.body as Record<string, any>;
+    const {email: rawEmail, password} = req.body as Record<string, any>;
     if (!rawEmail || typeof rawEmail !== 'string' || !password || typeof password !== 'string') {
-      return res.status(400).json({ error: 'email and password are required' });
+      return res.status(400).json({error: 'email and password are required'});
     }
 
     const email = String(rawEmail).toLowerCase().trim();
 
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const user = await User.findOne({email}).select('+password firstName lastName age birthDate address createdAt email').lean();
+    console.log("user", user)
 
-    const match = await bcrypt.compare(password, (user as any).password);
-    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user) return res.status(401).json({error: 'Invalid credentials'});
 
-    const payload: AuthPayload = {
-      userId: (user._id as any).toString(),
-      email: user.email as string,
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({error: 'Invalid credentials'});
+
+    const userForToken: IUserForToken = {
+      id: String(user._id),
+      password: user.password,
+      age: user.age,
+      address: user.address,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
 
-    const token = signAccessToken(payload);
-    const refresh_token = signRefreshToken(payload);
+    const token = signAccessToken(userForToken);
+    const refresh_token = signRefreshToken(userForToken);
 
-    return res.status(200).json({ token, refresh_token });
+    return res.status(200).json({token, refresh_token});
   } catch (err: any) {
-    return res.status(500).json({ error: err?.message || 'Internal server error' });
+    console.log("errr", err)
+    return res.status(500).json({error: err?.message || 'Internal server error'});
   }
 });
 
@@ -193,31 +201,45 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 // New: Refresh tokens - POST /auth/refresh
 router.post('/auth/refresh', async (req: Request, res: Response) => {
   try {
-    const { refresh_token } = req.body as { refresh_token?: unknown };
+    const {refresh_token} = req.body as { refresh_token?: unknown };
     if (!refresh_token || typeof refresh_token !== 'string') {
-      return res.status(400).json({ error: 'refresh_token is required' });
+      return res.status(400).json({error: 'refresh_token is required'});
     }
 
-    let payload: AuthPayload;
+    let payload: IUserForToken;
     try {
       payload = verifyRefreshToken(refresh_token);
 
     } catch (err) {
-      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+      return res.status(401).json({error: 'Invalid or expired refresh token'});
     }
 
+    const email = String(payload.email).toLowerCase().trim();
+
+    console.log("email",payload)
+
     // Ensure the user still exists
-    const user = await User.findById(payload.userId);
-    if (!user) return res.status(401).json({ error: 'Invalid refresh token (user not found)' });
+    const user = await User.findOne({email});
+    if (!user) return res.status(401).json({error: 'Invalid refresh token (user not found)'});
 
-    // Create new tokens (rotate refresh token)
-    const newPayload: AuthPayload = { userId: (user._id as any).toString(), email: user.email as string };
-    const newToken = signAccessToken(newPayload);
-    const newRefresh = signRefreshToken(newPayload);
+    const userForToken: IUserForToken = {
+      id: String(user._id),
+      password: user.password,
+      age: user.age,
+      address: user.address,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
 
-    return res.status(200).json({ token: newToken, refresh_token: newRefresh });
+    const newToken = signAccessToken(userForToken);
+    const newRefresh = signRefreshToken(userForToken);
+
+    return res.status(200).json({token: newToken, refresh_token: newRefresh});
   } catch (err: any) {
-    return res.status(500).json({ error: err?.message || 'Internal server error' });
+
+    console.log("errr", err)
+    return res.status(500).json({error: err?.message || 'Internal server error'});
   }
 });
 
