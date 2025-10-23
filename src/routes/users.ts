@@ -6,6 +6,47 @@ import authMiddleware, { AuthRequest } from '../middleware/auth';
 const router = Router();
 
 // List users with pagination and basic filters (protected)
+/**
+ * @openapi
+ * /users:
+ *   get:
+ *     summary: List users (protected)
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Max number of users to return
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *         description: Number of users to skip
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         description: Filter by email (exact)
+ *       - in: query
+ *         name: firstName
+ *         schema:
+ *           type: string
+ *         description: Filter by first name (partial, case-insensitive)
+ *       - in: query
+ *         name: lastName
+ *         schema:
+ *           type: string
+ *         description: Filter by last name (partial, case-insensitive)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: OK
+ *       '401':
+ *         description: Unauthorized
+ */
 router.get('/users', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     // req.user is now typed as AuthPayload
@@ -37,6 +78,28 @@ router.get('/users', authMiddleware, async (req: AuthRequest, res: Response) => 
 });
 
 // Get user by ID
+/**
+ * @openapi
+ * /users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User id
+ *     responses:
+ *       '200':
+ *         description: OK
+ *       '400':
+ *         description: Invalid id
+ *       '404':
+ *         description: Not found
+ */
 router.get('/users/:id', async (req: Request, res: Response) => {
   try {
     const {id} = req.params;
@@ -52,6 +115,49 @@ router.get('/users/:id', async (req: Request, res: Response) => {
 });
 
 // Update user (uses save hook to hash password if provided)
+/**
+ * @openapi
+ * /users/{id}:
+ *   patch:
+ *     summary: Update a user
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               age:
+ *                 type: integer
+ *               email:
+ *                 type: string
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               birthDate:
+ *                 type: string
+ *                 format: date
+ *               address:
+ *                 type: object
+ *               password:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Updated
+ *       '400':
+ *         description: Validation error
+ *       '404':
+ *         description: Not found
+ */
 router.patch('/users/:id', async (req: Request, res: Response) => {
   try {
     const {id} = req.params;
@@ -82,6 +188,27 @@ router.patch('/users/:id', async (req: Request, res: Response) => {
 });
 
 // Delete user
+/**
+ * @openapi
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Deleted
+ *       '400':
+ *         description: Invalid id
+ *       '404':
+ *         description: Not found
+ */
 router.delete('/users/:id', async (req: Request, res: Response) => {
   try {
     const {id} = req.params;
@@ -95,6 +222,25 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
 });
 
 // Get users with their flats populated
+/**
+ * @openapi
+ * /users-with-flats:
+ *   get:
+ *     summary: Get users with populated flats
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: query
+ *         name: age
+ *         schema:
+ *           type: integer
+ *         description: Return users with age less than this value
+ *     responses:
+ *       '200':
+ *         description: OK
+ *       '404':
+ *         description: No users found
+ */
 router.get('/users-with-flats', async (req: Request, res: Response) => {
   try {
     const ageFilter = req.query.age ? {age: {$lt: Number(req.query.age)}} : {};

@@ -67,6 +67,39 @@ function parseAddress(body: any) {
 }
 
 // Upload images to a flat (supports multiple files under field name `images`)
+/**
+ * @openapi
+ * /flats/{id}/images:
+ *   post:
+ *     summary: Upload images to a flat
+ *     tags:
+ *       - Flats
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       '201':
+ *         description: Images uploaded
+ *       '400':
+ *         description: Validation error
+ *       '404':
+ *         description: Flat not found
+ */
 router.post('/flats/:id/images', upload.array('images', 10), async (req, res) => {
   try {
 
@@ -128,6 +161,32 @@ router.post('/flats/:id/images', upload.array('images', 10), async (req, res) =>
 });
 
 // Delete a specific image from a flat by image subdocument id
+/**
+ * @openapi
+ * /flats/{id}/images/{imageId}:
+ *   delete:
+ *     summary: Delete a specific image from a flat
+ *     tags:
+ *       - Flats
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: imageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Image deleted
+ *       '400':
+ *         description: Validation error
+ *       '404':
+ *         description: Flat or image not found
+ */
 router.delete('/flats/:id/images/:imageId', async (req, res) => {
   try {
     const {id, imageId} = req.params;
@@ -165,6 +224,41 @@ router.delete('/flats/:id/images/:imageId', async (req, res) => {
 });
 
 // Create flat
+/**
+ * @openapi
+ * /flats:
+ *   post:
+ *     summary: Create a flat
+ *     tags:
+ *       - Flats
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               square:
+ *                 type: number
+ *               price:
+ *                 type: number
+ *               currency:
+ *                 type: string
+ *               address:
+ *                 type: object
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '201':
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Flat'
+ *       '400':
+ *         description: Validation error
+ */
 router.post('/flats', async (req, res) => {
   try {
     const {square, price, currency} = req.body || {};
@@ -222,6 +316,46 @@ router.post('/flats', async (req, res) => {
 });
 
 // Update flat
+/**
+ * @openapi
+ * /flats/{id}:
+ *   patch:
+ *     summary: Update a flat
+ *     tags:
+ *       - Flats
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               square:
+ *                 type: number
+ *               price:
+ *                 type: number
+ *               currency:
+ *                 type: string
+ *               address:
+ *                 type: object
+ *     responses:
+ *       '200':
+ *         description: Updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Flat'
+ *       '400':
+ *         description: Validation error
+ *       '404':
+ *         description: Not found
+ */
 router.patch('/flats/:id', async (req, res) => {
   try {
     const {id} = req.params;
@@ -260,6 +394,32 @@ router.patch('/flats/:id', async (req, res) => {
 });
 
 // POST /api/assign-flat
+/**
+ * @openapi
+ * /assign-flat:
+ *   post:
+ *     summary: Assign a flat to a user (creates join document)
+ *     tags:
+ *       - Flats
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               flatId:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Assigned
+ *       '400':
+ *         description: Validation error
+ *       '404':
+ *         description: User or Flat not found
+ */
 router.post('/assign-flat', async (req, res) => {
 
   console.log("boooody", req.body);
@@ -301,6 +461,38 @@ router.post('/assign-flat', async (req, res) => {
 });
 
 //get flats
+/**
+ * @openapi
+ * /flats:
+ *   get:
+ *     summary: List flats with optional currency filter
+ *     tags:
+ *       - Flats
+ *     parameters:
+ *       - in: query
+ *         name: currency
+ *         schema:
+ *           type: string
+ *         description: Filter by currency (GEL, USD, EUR)
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 flats:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Flat'
+ *                 flatsCount:
+ *                   type: integer
+ *                 total:
+ *                   type: integer
+ *       '400':
+ *         description: Validation error
+ */
 router.get('/flats', async (req, res) => {
   try {
     const q = req.query as Record<string, string | undefined>;
