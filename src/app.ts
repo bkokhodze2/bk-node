@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import productsRouter from './routes/products';
 import usersRouter from './routes/users';
 import flatsRouter from './routes/flats';
+import authRouter from './routes/auth';
+import { swaggerUi, swaggerSpec } from './swagger';
 
 dotenv.config();
 
@@ -27,8 +29,15 @@ async function start() {
     console.log(`Connected to MongoDB (db: ${MONGODB_DB})`);
 
     app.use('/api', productsRouter);
+    app.use('/api', authRouter);
     app.use('/api', usersRouter);
     app.use('/api', flatsRouter);
+
+    // Swagger UI (auto-generated from JSDoc comments)
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+    // Raw OpenAPI JSON - useful for clients or tooling
+    app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
