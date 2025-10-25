@@ -11,7 +11,7 @@ const options: any = {
     },
     servers: [
       {
-        url: process.env.BASE_URL + "/api" || 'https://bk-node-2.onrender.com/api',
+        url: process.env.BASE_URL || 'https://bk-node-2.onrender.com/api',
       },
     ],
     components: {
