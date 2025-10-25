@@ -24,6 +24,7 @@ const UserSchema = new Schema<IUser>(
       max: 150,
     },
     email: {
+      index:true,
       type: String,
       required: true,
       unique: true,
@@ -78,7 +79,6 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-UserSchema.index({ email: 1 }, { unique: true });
 
 // Hash password before saving when modified
 UserSchema.pre('save', async function (next) {

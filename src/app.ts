@@ -7,6 +7,7 @@ import productsRouter from './routes/products';
 import usersRouter from './routes/users';
 import flatsRouter from './routes/flats';
 import authRouter from './routes/auth';
+import questionsRouter from './routes/questions';
 import { swaggerUi, swaggerSpec } from './swagger';
 
 dotenv.config();
@@ -32,6 +33,7 @@ async function start() {
     app.use('/api', authRouter);
     app.use('/api', usersRouter);
     app.use('/api', flatsRouter);
+    app.use('/api', questionsRouter);
 
     // Swagger UI (auto-generated from JSDoc comments)
     app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

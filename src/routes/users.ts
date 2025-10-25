@@ -2,6 +2,7 @@ import {Router, Request, Response} from 'express';
 import mongoose from 'mongoose';
 import User from '../models/User';
 import authMiddleware, { AuthRequest } from '../middleware/auth';
+import InfoCard from '../models/InfoCard';
 
 const router = Router();
 
@@ -260,6 +261,97 @@ router.get('/users-with-flats', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({error: error.message});
+  }
+});
+
+// Create InfoCard (payload shape documented in request)
+router.post('/users/info-card', async (req: Request, res: Response) => {
+  try {
+    const body = req.body || {};
+    const infoCardId = body.id ?? body.infoCardId;
+    if (infoCardId == null) return res.status(400).json({ error: 'id is required in body' });
+
+    // Ensure numeric
+    const numericId = Number(infoCardId);
+    if (Number.isNaN(numericId)) return res.status(400).json({ error: 'id must be a number' });
+
+    // Prevent duplicate infoCardId
+    const exists = await InfoCard.findOne({ infoCardId: numericId });
+    if (exists) return res.status(400).json({ error: 'InfoCard with this id already exists' });
+
+    const status = body.status == null ? true : Boolean(body.status);
+    const imageData = body.imageData ?? null;
+    const categoryIdList = Array.isArray(body.categoryIdList) ? body.categoryIdList.map(Number) : [];
+
+
+    const normalizeDetail = (d: any) => {
+      const detail: any = {
+        infoCardDetailId: d?.infoCardDetailId != null ? Number(d.infoCardDetailId) : undefined,
+        infoCardId: d?.infoCardId != null ? Number(d.infoCardId) : numericId,
+        languageId: d?.languageId != null ? Number(d.languageId) : undefined,
+        title: d?.title,
+        subTitle: d?.subTitle,
+        status: d?.status == null ? true : Boolean(d.status),
+      };
+
+      return detail;
+    };
+
+    const details = Array.isArray(body.details) ? body.details.map(normalizeDetail) : [];
+
+    const doc = await InfoCard.create({
+      infoCardId: numericId,
+      status,
+      imageData,
+      categoryIdList,
+      details,
+    });
+
+    res.status(201).json(doc);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Update InfoCard by numeric id (body same as create, partial allowed)
+router.patch('/users/info-card/:id', async (req: Request, res: Response) => {
+  try {
+
+    console.log("eeee")
+    const paramId = req.params.id;
+    const numericId = Number(paramId);
+    if (Number.isNaN(numericId)) return res.status(400).json({ error: 'Invalid id param' });
+
+    const existing = await InfoCard.findOne({ infoCardId: numericId });
+    if (!existing) return res.status(404).json({ error: 'InfoCard not found' });
+
+    const body = req.body || {};
+
+    const normalizeDetail = (d: any) => {
+      const detail: any = {
+        infoCardDetailId: d?.infoCardDetailId != null ? Number(d.infoCardDetailId) : undefined,
+        infoCardId: d?.infoCardId != null ? Number(d.infoCardId) : numericId,
+        languageId: d?.languageId != null ? Number(d.languageId) : undefined,
+        title: d?.title,
+        subTitle: d?.subTitle,
+        status: d?.status == null ? true : Boolean(d.status),
+      };
+
+      return detail;
+    };
+
+    const update: any = {};
+    if (body.status != null) update.status = Boolean(body.status);
+    if (body.imageData != null) update.imageData = body.imageData;
+    if (Array.isArray(body.categoryIdList)) update.categoryIdList = body.categoryIdList.map(Number);
+    if (Array.isArray(body.details)) update.details = body.details.map(normalizeDetail);
+
+    Object.assign(existing, update);
+    await existing.save();
+
+    res.json(existing);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 });
 

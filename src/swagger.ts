@@ -54,6 +54,31 @@ const options: any = {
             images: { type: 'array', items: { type: 'object' } },
           },
         },
+        QuestionTranslation: {
+          type: 'object',
+          properties: {
+            languageId: { type: 'integer', description: '1=GE, 2=EN, 3=RU' },
+            question: { type: 'string' },
+            answer: { type: 'string' },
+            active: { type: 'boolean' },
+          },
+          required: ['languageId', 'question', 'answer'],
+        },
+        Question: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            questionId: { type: 'integer' },
+            active: { type: 'boolean' },
+            categoryId: { type: 'integer' },
+            translations: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/QuestionTranslation' },
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
       },
     },
   },
